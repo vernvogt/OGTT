@@ -386,7 +386,10 @@ function categorizeRace(positionRaw){
   if(m) return { category: 'shortcourse', num: parseInt(m[1],10) };
   m = pos.match(/^(\d+)$/);
   if(m) return { category: 'main', num: parseInt(m[1],10) };
-  return { category: 'ignore', num: null };
+  const STATUS_LABELS = { 'DNF':'DNF', 'DNS':'DNS', 'DQ':'DQ', 'SIGIS':'SIGIS' };
+  const label = STATUS_LABELS[pos.toUpperCase()];
+  if(label) return { category: 'main', status: label };
+  return { category: 'ignore' };
 }
 
 function fmtDateShort(iso){
@@ -403,24 +406,32 @@ function populatePerformancePaddlerSelect(){
     list.map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)} — "${escapeHtml(p.nickname)}"</option>`).join('');
 }
 
+function populatePerformancePeriodSelect(){
+  const sel = document.getElementById('performance-period-select');
+  if(!sel) return;
+  const years = new Set();
+  PARTICIPANTS.forEach(p => p.races.forEach(r => years.add(r.date.slice(0,4))));
+  const sortedYears = Array.from(years).sort((a,b) => b.localeCompare(a));
+  sel.innerHTML = '<option value="Overall">Overall</option>' +
+    sortedYears.map(y => `<option value="${y}">${y}</option>`).join('');
+}
+
 const PERF_Y_MAX = 15;
 
 function buildChartBlock(title, data, nickname, periodLabel){
   const block = document.createElement('div');
   block.className = 'perf-chart-block';
 
-  const descHtml = `<p class="perf-chart-desc">Horizontal axis: race date. Vertical axis: finishing position (1–${PERF_Y_MAX}), lower on the chart is a better result.</p>`;
-
   if(!data.length){
     block.innerHTML = `
       <div class="perf-chart-head"><h3>${title}</h3></div>
-      ${descHtml}
       <div class="perf-empty">No ${escapeHtml(title.toLowerCase())} logged yet for "${escapeHtml(nickname)}" (${escapeHtml(periodLabel)}).</div>
     `;
     return block;
   }
 
-  const best = Math.min(...data.map(d => d.num));
+  const numericResults = data.filter(d => typeof d.num === 'number');
+  const best = numericResults.length ? Math.min(...numericResults.map(d => d.num)) : null;
   const isDense = data.length > 30;
   const dateClass = isDense ? '' : 'horizontal';
 
@@ -435,12 +446,24 @@ function buildChartBlock(title, data, nickname, periodLabel){
   const labelInterval = isDense ? Math.ceil(data.length / 10) : 1;
 
   const bars = data.map((d, i) => {
+    const showDate = (i % labelInterval === 0) || (i === data.length - 1);
+    const dateLabel = showDate ? `<div class="perf-bar-date ${dateClass}">${fmtDateShort(d.date)}</div>` : `<div class="perf-bar-date ${dateClass}">&nbsp;</div>`;
+
+    if(d.status){
+      // DNF / DNS / DQ / SIGIS — no numeric placing, so show the status as text
+      // sitting at the baseline instead of a bar.
+      return `
+        <div class="perf-bar-item" title="${fmtDate(d.date)} — ${d.status}">
+          <div class="perf-status-text">${d.status}</div>
+          ${dateLabel}
+        </div>
+      `;
+    }
+
     const clamped = Math.min(d.num, PERF_Y_MAX);
     const heightPct = Math.max(4, Math.round((clamped / PERF_Y_MAX) * 100));
     const cls = d.num === 1 ? 'gold' : d.num === 2 ? 'silver' : d.num === 3 ? 'bronze' : '';
     const valueLabel = isDense ? '' : `<div class="perf-bar-value">${ordinal(d.num)}</div>`;
-    const showDate = (i % labelInterval === 0) || (i === data.length - 1);
-    const dateLabel = showDate ? `<div class="perf-bar-date ${dateClass}">${fmtDateShort(d.date)}</div>` : `<div class="perf-bar-date ${dateClass}">&nbsp;</div>`;
     return `
       <div class="perf-bar-item" title="${fmtDate(d.date)} — ${ordinal(d.num)}">
         ${valueLabel}
@@ -453,9 +476,8 @@ function buildChartBlock(title, data, nickname, periodLabel){
   block.innerHTML = `
     <div class="perf-chart-head">
       <h3>${title}</h3>
-      <div class="perf-sub">${data.length} race${data.length===1?'':'s'} in ${escapeHtml(periodLabel)} · best: ${ordinal(best)}</div>
+      <div class="perf-sub">${data.length} race${data.length===1?'':'s'} in ${escapeHtml(periodLabel)}${best !== null ? ' · best: ' + ordinal(best) : ''}</div>
     </div>
-    ${descHtml}
     <div class="perf-axis-wrap">
       <div class="perf-y-axis">${yAxisHtml}</div>
       <div class="perf-chart-scroll">
@@ -486,17 +508,20 @@ function renderPerformanceCharts(){
   if(!p) return;
 
   const period = selectedPerformancePeriod;
-  const periodLabel = period === 'Overall' ? 'All Time' : PERIOD_LABEL[period];
+  const periodLabel = period === 'Overall' ? 'All Time' : period;
 
   const races = p.races
-    .filter(r => period === 'Overall' || r.period === period)
+    .filter(r => period === 'Overall' || r.date.slice(0,4) === period)
     .slice()
     .sort((a,b) => a.date.localeCompare(b.date));
 
   const buckets = { main: [], s2: [], shortcourse: [] };
   races.forEach(r => {
     const cat = categorizeRace(r.position);
-    if(cat.category !== 'ignore'){
+    if(cat.category === 'ignore') return;
+    if(cat.status){
+      buckets[cat.category].push({ date: r.date, status: cat.status });
+    } else {
       buckets[cat.category].push({ date: r.date, num: cat.num });
     }
   });
@@ -567,6 +592,7 @@ async function init(){
   renderResultsYearTabs();
   renderResults();
   populatePerformancePaddlerSelect();
+  populatePerformancePeriodSelect();
   renderPerformanceCharts();
 }
 

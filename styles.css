@@ -333,6 +333,13 @@
     max-height:52px; overflow:hidden;
   }
   .perf-bar-date.horizontal{ writing-mode:horizontal-tb; transform:none; max-height:none; }
+  .perf-status-text{
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:700;
+    letter-spacing:.03em; color: var(--buoy-dark); background: rgba(232,90,42,0.1);
+    border-radius:4px; padding: 6px 3px; min-height:44px;
+    display:flex; align-items:center; justify-content:center;
+  }
   .perf-empty{ padding:24px 6px; text-align:center; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace; font-size:12.5px; }
   .perf-hint{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-soft); margin: 0 0 14px; }
 
