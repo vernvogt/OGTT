@@ -276,6 +276,66 @@
   .sc-results .chip{ background: rgba(21,112,127,0.12); }
   .sc-results .chip .n{ background: var(--sea); }
 
+  /* ---------- Paddler Performance ---------- */
+  .perf-selectors{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
+  .perf-select{
+    flex:1; min-width:200px; padding:12px 14px; border-radius:10px; border:1px solid var(--line);
+    background:var(--white); font-family:'Inter'; font-size:14.5px; color:var(--ink); font-weight:600;
+    cursor:pointer; appearance:none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%234A5C5D'><path d='M5.5 7.5l4.5 4.5 4.5-4.5' stroke='%234A5C5D' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat; background-position: right 12px center; padding-right:36px;
+  }
+  .perf-select:disabled{ opacity:0.45; cursor:not-allowed; }
+  .perf-select:focus{ outline:2px solid var(--sea); outline-offset:1px; }
+
+  .perf-chart-block{
+    background:var(--white); border:1px solid var(--line); border-radius:16px;
+    padding:20px 22px; margin: 18px 0; box-shadow: 0 8px 24px -16px rgba(12,27,29,0.2);
+  }
+  .perf-chart-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px; flex-wrap:wrap; }
+  .perf-chart-head h3{
+    font-family:'Anton', sans-serif; font-weight:400; text-transform:uppercase; font-size:17px;
+    letter-spacing:.01em; margin:0; color:var(--deep);
+  }
+  .perf-chart-head .perf-sub{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-soft); }
+  .perf-chart-desc{
+    font-family:'Inter'; font-size:12.5px; color:var(--ink-soft); margin: 0 0 16px; line-height:1.45;
+  }
+  .perf-axis-wrap{ display:flex; gap:8px; }
+  .perf-y-axis{
+    display:flex; flex-direction:column-reverse; justify-content:space-between;
+    height:160px; flex-shrink:0; width:20px;
+  }
+  .perf-y-axis .y-tick{
+    font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:var(--ink-soft);
+    line-height:1; transform: translateY(50%);
+  }
+  .perf-chart-scroll{ overflow-x:visible; padding-bottom:6px; flex:1; min-width:0; }
+  .perf-plot-area{ position:relative; width:100%; }
+  .perf-gridlines{ position:absolute; left:0; right:0; top:0; height:160px; display:flex; flex-direction:column-reverse; justify-content:space-between; pointer-events:none; }
+  .perf-gridlines .gridline{ border-top:1px dashed var(--line); width:100%; height:0; }
+  .perf-bars{ position:relative; display:flex; align-items:flex-end; gap:4px; height:160px; width:100%; padding: 0 2px; }
+  .perf-bar-item{ display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; flex:1; min-width:0; max-width:60px; }
+  .perf-bar-value{
+    font-family:'Anton', sans-serif; font-size:11px; color:var(--deep); margin-bottom:4px; white-space:nowrap;
+  }
+  .perf-bar{
+    width:60%; max-width:22px; min-width:3px; border-radius:3px 3px 6px 6px; background: var(--sea);
+    transition: transform .15s ease; min-height:4px;
+  }
+  .perf-bar.gold{ background: var(--buoy); }
+  .perf-bar.silver{ background: var(--rope); }
+  .perf-bar.bronze{ background: var(--deep2); }
+  .perf-bar-item:hover .perf-bar{ transform: scaleY(1.04); }
+  .perf-bar-date{
+    font-family:'IBM Plex Mono', monospace; font-size:9px; color:var(--ink-soft);
+    margin-top:6px; white-space:nowrap; writing-mode: vertical-rl; transform: rotate(180deg);
+    max-height:52px; overflow:hidden;
+  }
+  .perf-bar-date.horizontal{ writing-mode:horizontal-tb; transform:none; max-height:none; }
+  .perf-empty{ padding:24px 6px; text-align:center; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace; font-size:12.5px; }
+  .perf-hint{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-soft); margin: 0 0 14px; }
+
   footer{ text-align:center; padding: 30px 20px 50px; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace; font-size:12px; }
 
   @media (max-width:600px){
@@ -284,6 +344,8 @@
     .rank{ font-size:16px; }
     .hero-inner{ gap:16px; }
     .hero-logo{ width:104px; height:104px; }
+    .page-nav{ gap:4px; padding:5px; }
+    .page-btn{ font-size:11.5px; padding:11px 4px; letter-spacing:.01em; }
   }
 
 /* ---------- PWA load status ---------- */

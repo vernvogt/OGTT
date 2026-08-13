@@ -80,6 +80,26 @@
     </div>
     <div id="results"></div>
   </section>
+
+  <!-- PADDLER PERFORMANCE PAGE -->
+  <section class="page" id="page-performance">
+    <div class="section-head">
+      <h2>Paddler Performance</h2>
+      <div class="meta" id="performance-meta"></div>
+    </div>
+    <p class="perf-hint">Pick a paddler, then a period, to see their race-by-race results.</p>
+    <div class="perf-selectors">
+      <select class="perf-select" id="performance-paddler-select">
+        <option value="">Select a paddler…</option>
+      </select>
+      <select class="perf-select" id="performance-period-select" disabled>
+        <option value="Overall">Overall</option>
+        <option value="2026">2026</option>
+        <option value="2025">2025</option>
+      </select>
+    </div>
+    <div id="performance-charts"></div>
+  </section>
 </main>
 
 <footer>Built from the OGTT results register · positions and points as logged by the club</footer>

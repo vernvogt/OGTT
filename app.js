@@ -55,7 +55,8 @@ function renderPageNav(){
   const pages = [
     {id:'leaderboard', label:'Leaderboard'},
     {id:'reports', label:'Race Reports'},
-    {id:'results', label:'Race Results'}
+    {id:'results', label:'Race Results'},
+    {id:'performance', label:'Performance'}
   ];
   wrap.innerHTML = "";
   pages.forEach(pg => {
@@ -370,10 +371,153 @@ function jumpToReport(date){
   setTimeout(() => scrollToCard('report-' + date), 200);
 }
 
+/* ---------------- Paddler Performance ---------------- */
+let selectedPerformancePaddler = "";
+let selectedPerformancePeriod = "Overall";
+
+// Sorts a race's position into a chart bucket. Only plain numeric finishes
+// (main course, Doubles/S2, or Short Course) are charted — DNF/DNS/DQ/SIGIS
+// and anything else without a real placing is ignored, as requested.
+function categorizeRace(positionRaw){
+  const pos = String(positionRaw).trim();
+  let m = pos.match(/^(\d+)\s*\(S2\)$/i);
+  if(m) return { category: 's2', num: parseInt(m[1],10) };
+  m = pos.match(/^(\d+)\s*\(Short\s*Course\)$/i);
+  if(m) return { category: 'shortcourse', num: parseInt(m[1],10) };
+  m = pos.match(/^(\d+)$/);
+  if(m) return { category: 'main', num: parseInt(m[1],10) };
+  return { category: 'ignore', num: null };
+}
+
+function fmtDateShort(iso){
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+}
+
+function populatePerformancePaddlerSelect(){
+  const sel = document.getElementById('performance-paddler-select');
+  if(!sel) return;
+  const list = PARTICIPANTS.filter(p => p.entries.Overall > 0).slice().sort((a,b) => a.name.localeCompare(b.name));
+  document.getElementById('performance-meta').textContent = list.length + ' paddlers';
+  sel.innerHTML = '<option value="">Select a paddler…</option>' +
+    list.map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)} — "${escapeHtml(p.nickname)}"</option>`).join('');
+}
+
+const PERF_Y_MAX = 15;
+
+function buildChartBlock(title, data, nickname, periodLabel){
+  const block = document.createElement('div');
+  block.className = 'perf-chart-block';
+
+  const descHtml = `<p class="perf-chart-desc">Horizontal axis: race date. Vertical axis: finishing position (1–${PERF_Y_MAX}), lower on the chart is a better result.</p>`;
+
+  if(!data.length){
+    block.innerHTML = `
+      <div class="perf-chart-head"><h3>${title}</h3></div>
+      ${descHtml}
+      <div class="perf-empty">No ${escapeHtml(title.toLowerCase())} logged yet for "${escapeHtml(nickname)}" (${escapeHtml(periodLabel)}).</div>
+    `;
+    return block;
+  }
+
+  const best = Math.min(...data.map(d => d.num));
+  const isDense = data.length > 30;
+  const dateClass = isDense ? '' : 'horizontal';
+
+  const yTicks = [];
+  for(let v = 1; v <= PERF_Y_MAX; v++) yTicks.push(v);
+  const yAxisHtml = yTicks.map(v => `<div class="y-tick">${v}</div>`).join('');
+  const gridlinesHtml = yTicks.map(() => `<div class="gridline"></div>`).join('');
+
+  // When there are lots of bars, showing every single date label just produces
+  // unreadable clutter — so thin them out to roughly 10 evenly-spaced labels.
+  // Every bar still shows its date/place on hover/tap via the title tooltip.
+  const labelInterval = isDense ? Math.ceil(data.length / 10) : 1;
+
+  const bars = data.map((d, i) => {
+    const clamped = Math.min(d.num, PERF_Y_MAX);
+    const heightPct = Math.max(4, Math.round((clamped / PERF_Y_MAX) * 100));
+    const cls = d.num === 1 ? 'gold' : d.num === 2 ? 'silver' : d.num === 3 ? 'bronze' : '';
+    const valueLabel = isDense ? '' : `<div class="perf-bar-value">${ordinal(d.num)}</div>`;
+    const showDate = (i % labelInterval === 0) || (i === data.length - 1);
+    const dateLabel = showDate ? `<div class="perf-bar-date ${dateClass}">${fmtDateShort(d.date)}</div>` : `<div class="perf-bar-date ${dateClass}">&nbsp;</div>`;
+    return `
+      <div class="perf-bar-item" title="${fmtDate(d.date)} — ${ordinal(d.num)}">
+        ${valueLabel}
+        <div class="perf-bar ${cls}" style="height:${heightPct}%"></div>
+        ${dateLabel}
+      </div>
+    `;
+  }).join("");
+
+  block.innerHTML = `
+    <div class="perf-chart-head">
+      <h3>${title}</h3>
+      <div class="perf-sub">${data.length} race${data.length===1?'':'s'} in ${escapeHtml(periodLabel)} · best: ${ordinal(best)}</div>
+    </div>
+    ${descHtml}
+    <div class="perf-axis-wrap">
+      <div class="perf-y-axis">${yAxisHtml}</div>
+      <div class="perf-chart-scroll">
+        <div class="perf-plot-area">
+          <div class="perf-gridlines">${gridlinesHtml}</div>
+          <div class="perf-bars">${bars}</div>
+        </div>
+      </div>
+    </div>
+  `;
+  return block;
+}
+
+function renderPerformanceCharts(){
+  const wrap = document.getElementById('performance-charts');
+  const periodSelect = document.getElementById('performance-period-select');
+  if(!wrap) return;
+  wrap.innerHTML = "";
+
+  if(!selectedPerformancePaddler){
+    periodSelect.disabled = true;
+    wrap.innerHTML = '<p class="perf-hint">Pick a paddler above to see their race-by-race results over time.</p>';
+    return;
+  }
+  periodSelect.disabled = false;
+
+  const p = PARTICIPANTS.find(x => x.name === selectedPerformancePaddler);
+  if(!p) return;
+
+  const period = selectedPerformancePeriod;
+  const periodLabel = period === 'Overall' ? 'All Time' : PERIOD_LABEL[period];
+
+  const races = p.races
+    .filter(r => period === 'Overall' || r.period === period)
+    .slice()
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  const buckets = { main: [], s2: [], shortcourse: [] };
+  races.forEach(r => {
+    const cat = categorizeRace(r.position);
+    if(cat.category !== 'ignore'){
+      buckets[cat.category].push({ date: r.date, num: cat.num });
+    }
+  });
+
+  wrap.appendChild(buildChartBlock('Main Race Results', buckets.main, p.nickname, periodLabel));
+  wrap.appendChild(buildChartBlock('Doubles (S2) Results', buckets.s2, p.nickname, periodLabel));
+  wrap.appendChild(buildChartBlock('Short Course Results', buckets.shortcourse, p.nickname, periodLabel));
+}
+
 /* ---------------- Search ---------------- */
 document.getElementById('search').addEventListener('input', (e) => {
   searchTerm = e.target.value;
   renderBoard();
+});
+document.getElementById('performance-paddler-select').addEventListener('change', (e) => {
+  selectedPerformancePaddler = e.target.value;
+  renderPerformanceCharts();
+});
+document.getElementById('performance-period-select').addEventListener('change', (e) => {
+  selectedPerformancePeriod = e.target.value;
+  renderPerformanceCharts();
 });
 
 /* ---------------- Data loading & init ---------------- */
@@ -422,6 +566,8 @@ async function init(){
   renderReports();
   renderResultsYearTabs();
   renderResults();
+  populatePerformancePaddlerSelect();
+  renderPerformanceCharts();
 }
 
 init();
