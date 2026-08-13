@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>OGTT — Leaderboard</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#0B2E38" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="OGTT" />
+<link rel="icon" href="icons/favicon-32.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="ocean-bg"></div>
+
+<header class="hero">
+  <div class="hero-inner">
+    <img class="hero-logo" src="assets/logo.png" alt="Tiffs Tigers logo" />
+    <div class="hero-text">
+      <div class="eyebrow"><span class="dot"></span> Ocean's Greatest Time Trial</div>
+      <h1 class="title">OGTT<span>.</span> Leaderboard</h1>
+      <p class="tagline">Every entry, every DNF, every DNS, every Siggi's session counts.</p>
+      <p class="load-status" id="load-status"></p>
+    </div>
+  </div>
+  <svg class="wave-row" viewBox="0 0 1200 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,30 C150,60 350,0 600,30 C850,60 1050,0 1200,30 L1200,60 L0,60 Z" fill="#EFE6D3"></path>
+  </svg>
+</header>
+
+<div class="page-nav-wrap">
+  <div class="page-nav" id="page-nav"></div>
+</div>
+
+<main>
+  <!-- LEADERBOARD PAGE -->
+  <section class="page active" id="page-leaderboard">
+    <div class="tabs-wrap" style="margin:0 0 20px;padding:0;">
+      <div class="tabs" id="tabs"></div>
+    </div>
+    <div class="section-head">
+      <h2 id="board-title">Leaderboard</h2>
+      <div class="meta" id="board-meta"></div>
+    </div>
+    <div class="search-row">
+      <input class="search" id="search" type="text" placeholder="Find a paddler…" />
+    </div>
+    <div class="board" id="board"></div>
+  </section>
+
+  <!-- RACE REPORTS PAGE -->
+  <section class="page" id="page-reports">
+    <div class="tabs-wrap" style="margin:0 0 20px;padding:0;">
+      <div class="tabs" id="report-year-tabs"></div>
+    </div>
+    <div class="section-head">
+      <h2>Race Reports</h2>
+      <div class="meta" id="reports-meta"></div>
+    </div>
+    <div id="reports"></div>
+  </section>
+
+  <!-- RACE RESULTS PAGE -->
+  <section class="page" id="page-results">
+    <div class="tabs-wrap" style="margin:0 0 20px;padding:0;">
+      <div class="tabs" id="results-year-tabs"></div>
+    </div>
+    <div class="section-head">
+      <h2>Race Results</h2>
+      <div class="meta" id="results-meta"></div>
+    </div>
+    <div id="results"></div>
+  </section>
+</main>
+
+<footer>Built from the OGTT results register · positions and points as logged by the club</footer>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
